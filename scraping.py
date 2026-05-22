@@ -8,6 +8,8 @@ from openpyxl import Workbook, load_workbook
 import random
 import os
 import time
+import re
+import subprocess
 
 # ----------------------------
 # PAGE TITLE
@@ -68,7 +70,22 @@ if not url:
 # ----------------------------
 # START CHROME
 # ----------------------------
-driver = uc.Chrome()
+# ----------------------------
+# START CHROME
+# ----------------------------
+
+
+output = subprocess.check_output(
+    r'reg query "HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon" /v version',
+    shell=True
+).decode()
+
+version = re.search(r'(\d+)\.', output).group(1)
+
+driver = uc.Chrome(
+    version_main=int(version),
+    use_subprocess=True
+)
 
 processed_urls = set()
 
@@ -229,7 +246,10 @@ try:
 
             time.sleep(5)
 
-            driver = uc.Chrome()
+            driver = uc.Chrome(
+    version_main=int(version),
+    use_subprocess=True
+)
 
             time.sleep(5)
 
