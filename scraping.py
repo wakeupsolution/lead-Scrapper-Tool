@@ -10,6 +10,8 @@ import os
 import time
 import re
 import subprocess
+from urllib.parse import urlparse
+from datetime import datetime
 
 # ----------------------------
 # PAGE TITLE
@@ -24,379 +26,419 @@ st.title("Lead Scrapper Tool")
 if "stop_scraping" not in st.session_state:
     st.session_state.stop_scraping = False
 
-# ----------------------------
-# URL INPUT
-# ----------------------------
-url = st.text_input(
-    "Enter URL",
-    placeholder="https://www.justdial.com/Chennai/Clinics/nct-10101647"
-)
-
-# ----------------------------
-# BUTTONS
-# ----------------------------
-col1, col2 = st.columns(2)
-
-with col1:
-    start_button = st.button("Start Scraping")
-
-with col2:
-    stop_button = st.button("Stop Scraping")
-
-# ----------------------------
-# STOP BUTTON
-# ----------------------------
-if stop_button:
-    st.session_state.stop_scraping = True
-    st.warning("Scraping stopped by user")
-    st.stop()
-
-# ----------------------------
-# START BUTTON
-# ----------------------------
-if start_button:
-    st.session_state.stop_scraping = False
-
-if not start_button:
-    st.stop()
-
-# ----------------------------
-# VALIDATE URL
-# ----------------------------
-if not url:
-    st.error("Please enter URL")
-    st.stop()
-
-# ----------------------------
-# START CHROME
-# ----------------------------
-# ----------------------------
-# START CHROME
-# ----------------------------
-
-
-output = subprocess.check_output(
-    r'reg query "HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon" /v version',
-    shell=True
-).decode()
-
-version = re.search(r'(\d+)\.', output).group(1)
-
-driver = uc.Chrome(
-    version_main=int(version),
-    use_subprocess=True
-)
-
-processed_urls = set()
-
-try:
-
-    driver.get(url)
-
-    st.write("Page Title :", driver.title)
-    st.write("Current URL :", driver.current_url)
-
-    time.sleep(5)
-
     # ----------------------------
-    # SCROLL PAGE
+    # URL INPUT
     # ----------------------------
-    last_height = driver.execute_script(
-        "return document.body.scrollHeight"
+    url = st.text_input(
+        "Enter URL",
+        placeholder="https://www.justdial.com/Chennai/Clinics/nct-10101647"
     )
 
-    for i in range(5):
-
-        if st.session_state.stop_scraping:
-            driver.quit()
-            st.warning("Scraping stopped")
-            st.stop()
-
-        st.write(f"Scrolling : {i + 1}")
-
-        driver.execute_script(
-            "window.scrollTo(0, document.body.scrollHeight);"
-        )
-
-        time.sleep(random.randint(5, 10))
-
-        new_height = driver.execute_script(
-            "return document.body.scrollHeight"
-        )
-
-        if new_height == last_height:
-            st.write("All listings loaded")
-            break
-
-        last_height = new_height
-
     # ----------------------------
-    # GET PAGE SOURCE
+    # BUTTONS
     # ----------------------------
-    soup = BeautifulSoup(driver.page_source, "html.parser")
+    col1, col2 = st.columns(2)
 
-    # ----------------------------
-    # FIND BUSINESS LINKS
-    # ----------------------------
-    business_links = []
+    with col1:
+        start_button = st.button("Start Scraping")
 
-    all_links = soup.find_all("a", href=True)
-
-    for link in all_links:
-
-        href = link["href"]
-
-        if "/Chennai/" in href and "nct-" not in href:
-
-            full_url = href
-
-            if full_url.startswith("/"):
-                full_url = "https://www.justdial.com" + full_url
-
-            if full_url not in business_links:
-                business_links.append(full_url)
-
-    st.write("Total business links :", len(business_links))
-
-    if len(business_links) == 0:
-        st.error("No business links found")
-        driver.quit()
-        st.stop()
-
-    # ----------------------------
-    # EXCEL FILE
-    # ----------------------------
-    excel_file = "justdial_leads.xlsx"
-
-    if os.path.exists(excel_file):
-
-        wb = load_workbook(excel_file)
-        ws = wb.active
-
-        st.write("Existing Excel file opened")
-
-    else:
-
-        wb = Workbook()
-        ws = wb.active
-
-        ws.append([
-            "Business Name",
-            "Website",
-            "Justdial URL",
-            "Phone Number",
-            "Address"
-        ])
-
-        wb.save(excel_file)
-
-        st.write("New Excel file created")
-
-    st.write("Excel Path :", os.path.abspath(excel_file))
-
-    # ----------------------------
-    # PROGRESS BAR
-    # ----------------------------
-    progress_bar = st.progress(0)
-
-    status_text = st.empty()
-
-    # ----------------------------
-    # OPEN BUSINESS PAGES
-    # ----------------------------
-    count = 0
-
-    for business_url in business_links:
-
-        # ----------------------------
-        # STOP SCRAPING
-        # ----------------------------
-        if st.session_state.stop_scraping:
-            driver.quit()
-            st.warning("Scraping stopped")
-            st.stop()
-
-        count += 1
-
-        # ----------------------------
-        # UPDATE PROGRESS
-        # ----------------------------
-        progress = count / len(business_links)
-
-        progress_bar.progress(progress)
-
-        status_text.write(
-            f"Processing {count} / {len(business_links)}"
-        )
-
-        # ----------------------------
-        # SKIP DUPLICATES
-        # ----------------------------
-        if business_url in processed_urls:
-            continue
-
-        # ----------------------------
-        # RESTART DRIVER
-        # ----------------------------
-        if count % 20 == 0:
-
-            st.write("Restarting browser...")
-
-            driver.quit()
-
-            time.sleep(5)
-
-            driver = uc.Chrome(
-    version_main=int(version),
-    use_subprocess=True
-)
-
-            time.sleep(5)
-
-        try:
-
-            driver.get(business_url)
-
-            WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located(
-                    (By.TAG_NAME, "title")
-                )
-            )
-
-            detail_soup = BeautifulSoup(
-                driver.page_source,
-                "html.parser"
-            )
+        with col2:
+            stop_button = st.button("Stop Scraping")
 
             # ----------------------------
-            # BUSINESS NAME
+            # STOP BUTTON
             # ----------------------------
-            business_name = (
-                driver.title.split("in")[0].strip()
-            )
+            if stop_button:
+                st.session_state.stop_scraping = True
+                st.warning("Scraping stopped by user")
+                st.stop()
 
-            # ----------------------------
-            # ALL LINKS
-            # ----------------------------
-            detail_links = detail_soup.find_all(
-                "a",
-                href=True
-            )
+                # ----------------------------
+                # START BUTTON
+                # ----------------------------
+                if start_button:
+                    st.session_state.stop_scraping = False
 
-            # ----------------------------
-            # PHONE NUMBER
-            # ----------------------------
-            phone_number = "Not Found"
+                    if not start_button:
+                        st.stop()
 
-            for dlink in detail_links:
+                        # ----------------------------
+                        # VALIDATE URL
+                        # ----------------------------
+                        if not url:
+                            st.error("Please enter URL")
+                            st.stop()
 
-                text = dlink.text.strip()
+                            # ----------------------------
+                            # START CHROME
+                            # ----------------------------
+                            # ----------------------------
+                            # START CHROME
+                            # ----------------------------
 
-                if text.isdigit() and len(text) >= 10:
 
-                    phone_number = text
-                    break
+                            output = subprocess.check_output(
+                                r'reg query "HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon" /v version',
+                                shell=True
+                            ).decode()
 
-            # ----------------------------
-            # ADDRESS
-            # ----------------------------
-            address = "No Address"
+                            version = re.search(r'(\d+)\.', output).group(1)
 
-            address_tag = detail_soup.find(
-                "a",
-                class_="color111"
-            )
+                            driver = uc.Chrome(
+                                version_main=int(version),
+                                use_subprocess=True
+                            )
 
-            if address_tag:
+                            processed_urls = set()
 
-                address = address_tag.get_text(
-                    " ",
-                    strip=True
-                )
+                            try:
 
-            # ----------------------------
-            # WEBSITE
-            # ----------------------------
-            website = "No Website"
+                                driver.get(url)
 
-            for dlink in detail_links:
+                                st.write("Page Title :", driver.title)
+                                st.write("Current URL :", driver.current_url)
 
-                dhref = dlink["href"].lower()
+                                time.sleep(5)
 
-                if (
-                    "http" in dhref
-                    and "justdial" not in dhref
-                    and "facebook" not in dhref
-                    and "instagram" not in dhref
-                    and "youtube" not in dhref
-                    and "whatsapp" not in dhref
-                ):
+                                # ----------------------------
+                                # SCROLL PAGE
+                                # ----------------------------
+                                last_height = driver.execute_script(
+                                    "return document.body.scrollHeight"
+                                )
 
-                    website = dhref
-                    break
+                                for i in range(5):
 
-            # ----------------------------
-            # CLEAN URL
-            # ----------------------------
-            clean_url = business_url.split("?")[0]
+                                    if st.session_state.stop_scraping:
+                                        driver.quit()
+                                        st.warning("Scraping stopped")
+                                        st.stop()
 
-            if clean_url in processed_urls:
-                continue
+                                        st.write(f"Scrolling : {i + 1}")
 
-            # ----------------------------
-            # SAVE TO EXCEL
-            # ----------------------------
-            ws.append([
-                business_name,
-                website,
-                clean_url,
-                phone_number,
-                address,
-            ])
+                                        driver.execute_script(
+                                            "window.scrollTo(0, document.body.scrollHeight);"
+                                        )
 
-            wb.save(excel_file)
+                                        time.sleep(random.randint(5, 10))
 
-            processed_urls.add(clean_url)
+                                        new_height = driver.execute_script(
+                                            "return document.body.scrollHeight"
+                                        )
 
-        except Exception as e:
+                                        if new_height == last_height:
+                                            st.write("All listings loaded")
+                                            break
 
-            st.error(f"Error : {e}")
+                                        last_height = new_height
 
-    # ----------------------------
-    # CLOSE DRIVER
-    # ----------------------------
-    driver.quit()
+                                        # ----------------------------
+                                        # GET PAGE SOURCE
+                                        # ----------------------------
+                                        soup = BeautifulSoup(driver.page_source, "html.parser")
 
-    # ----------------------------
-    # SUCCESS
-    # ----------------------------
-    st.success("Scraping Completed")
+                                        # ----------------------------
+                                        # FIND BUSINESS LINKS
+                                        # ----------------------------
+                                        business_links = []
 
-    st.write("Excel saved :", excel_file)
+                                        all_links = soup.find_all("a", href=True)
 
-    # ----------------------------
-    # DOWNLOAD BUTTON
-    # ----------------------------
-    if os.path.exists(excel_file):
+                                        for link in all_links:
 
-        with open(excel_file, "rb") as file:
+                                            href = link["href"]
 
-            st.download_button(
-                label="Download Excel",
-                data=file,
-                file_name=excel_file,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+                                            if "/Chennai/" in href and "nct-" not in href:
 
-except Exception as e:
+                                                full_url = href
 
-    st.error(f"Main Error : {e}")
+                                                if full_url.startswith("/"):
+                                                    full_url = "https://www.justdial.com" + full_url
 
-    try:
-        driver.quit()
-    except:
-        pass 
+                                                    if full_url not in business_links:
+                                                        business_links.append(full_url)
 
-# import streamlit as st
+                                                        st.write("Total business links :", len(business_links))
 
-# st.title("Working")
+                                                        if len(business_links) == 0:
+                                                            st.error("No business links found")
+                                                            driver.quit()
+                                                            st.stop()
+
+                                                            # ----------------------------
+                                                            # EXCEL FILE
+                                                            # ----------------------------
+                                                            path_parts = url.split("/")
+
+                                                            category_name = path_parts[-2]  # Interior-Designers
+
+                                                            excel_file = f"{category_name}.xlsx"
+
+                                                            st.write("Category:", category_name)
+                                                            st.write("Excel File:", excel_file)
+
+                                                            if os.path.exists(excel_file):
+
+                                                                wb = load_workbook(excel_file)
+                                                                ws = wb.active
+
+                                                                st.write("Existing Excel file opened")
+
+                                                            else:
+
+                                                                wb = Workbook()
+                                                                ws = wb.active
+
+                                                                ws.append([
+                                                                    "Business Name",
+                                                                    "Website",
+                                                                    "Justdial URL",
+                                                                    "Phone Number",
+                                                                    "Address",
+                                                                    "Date"
+                                                                ])
+
+                                                                wb.save(excel_file)
+                                                                existing_urls = set()
+
+                                                                for row in ws.iter_rows(min_row=2, values_only=True):
+                                                                    if row[2]:
+                                                                        existing_urls.add(str(row[2]).strip())
+
+                                                                        st.write("New Excel file created")
+
+                                                                        st.write("Excel Path :", os.path.abspath(excel_file))
+
+                                                                        # ----------------------------
+                                                                        # PROGRESS BAR
+                                                                        # ----------------------------
+                                                                        progress_bar = st.progress(0)
+
+                                                                        status_text = st.empty()
+
+                                                                        # ----------------------------
+                                                                        # OPEN BUSINESS PAGES
+                                                                        # ----------------------------
+                                                                        count = 0
+
+                                                                        for business_url in business_links:
+
+                                                                            # ----------------------------
+                                                                            # STOP SCRAPING
+                                                                            # ----------------------------
+                                                                            if st.session_state.stop_scraping:
+                                                                                driver.quit()
+                                                                                st.warning("Scraping stopped")
+                                                                                st.stop()
+
+                                                                                count += 1
+
+                                                                                # ----------------------------
+                                                                                # UPDATE PROGRESS
+                                                                                # ----------------------------
+                                                                                progress = count / len(business_links)
+
+                                                                                progress_bar.progress(progress)
+
+                                                                                status_text.write(
+                                                                                    f"Processing {count} / {len(business_links)}"
+                                                                                )
+
+                                                                                # ----------------------------
+                                                                                # SKIP DUPLICATES
+                                                                                # ----------------------------
+                                                                                if business_url in processed_urls:
+                                                                                    continue
+
+                                                                                # ----------------------------
+                                                                                # RESTART DRIVER
+                                                                                # ----------------------------
+                                                                                if count % 20 == 0:
+
+                                                                                    st.write("Restarting browser...")
+
+                                                                                    driver.quit()
+
+                                                                                    time.sleep(5)
+
+                                                                                    driver = uc.Chrome(
+                                                                                        version_main=int(version),
+                                                                                        use_subprocess=True
+                                                                                    )
+
+                                                                                    time.sleep(5)
+
+                                                                                    try:
+
+                                                                                        driver.get(business_url)
+
+                                                                                        WebDriverWait(driver, 15).until(
+                                                                                            EC.presence_of_element_located(
+                                                                                                (By.TAG_NAME, "title")
+                                                                                            )
+                                                                                        )
+
+                                                                                        detail_soup = BeautifulSoup(
+                                                                                            driver.page_source,
+                                                                                            "html.parser"
+                                                                                        )
+
+                                                                                        # ----------------------------
+                                                                                        # BUSINESS NAME
+                                                                                        # ----------------------------
+                                                                                        business_name = (
+                                                                                            driver.title.split("in")[0].strip()
+                                                                                        )
+
+                                                                                        # ----------------------------
+                                                                                        # ALL LINKS
+                                                                                        # ----------------------------
+                                                                                        detail_links = detail_soup.find_all(
+                                                                                            "a",
+                                                                                            href=True
+                                                                                        )
+
+                                                                                        # ----------------------------
+                                                                                        # PHONE NUMBER
+                                                                                        # ----------------------------
+                                                                                        phone_number = "Not Found"
+
+                                                                                        for dlink in detail_links:
+
+                                                                                            text = dlink.text.strip()
+
+                                                                                            if text.isdigit() and len(text) >= 10:
+
+                                                                                                phone_number = text
+                                                                                                break
+
+                                                                                            # ----------------------------
+                                                                                            # ADDRESS
+                                                                                            # ----------------------------
+                                                                                            address = "No Address"
+
+                                                                                            address_tag = detail_soup.find(
+                                                                                                "a",
+                                                                                                class_="color111"
+                                                                                            )
+
+                                                                                            if address_tag:
+
+                                                                                                address = address_tag.get_text(
+                                                                                                    " ",
+                                                                                                    strip=True
+                                                                                                )
+
+                                                                                                # ----------------------------
+                                                                                                # WEBSITE
+                                                                                                # ----------------------------
+                                                                                                website = "No Website"
+
+                                                                                                for dlink in detail_links:
+
+                                                                                                    dhref = dlink["href"].lower()
+
+                                                                                                    if (
+                                                                                                        "http" in dhref
+                                                                                                        and "justdial" not in dhref
+                                                                                                        and "facebook" not in dhref
+                                                                                                        and "instagram" not in dhref
+                                                                                                        and "youtube" not in dhref
+                                                                                                        and "whatsapp" not in dhref
+                                                                                                    ):
+
+                                                                                                        website = dhref
+                                                                                                        break
+
+                                                                                                    # ----------------------------
+                                                                                                    # CLEAN URL
+                                                                                                    # ----------------------------
+                                                                                                    # ----------------------------
+                                                                                                    # OPEN BUSINESS PAGE
+                                                                                                    # ----------------------------
+                                                                                                    driver.get(business_url)
+
+                                                                                                    WebDriverWait(driver, 15).until(
+                                                                                                        EC.presence_of_element_located(
+                                                                                                            (By.TAG_NAME, "title")
+                                                                                                        )
+                                                                                                    )
+
+                                                                                                    # Get final URL after redirects
+                                                                                                    clean_url = driver.current_url.split("?")[0]
+
+                                                                                                    detail_soup = BeautifulSoup(
+                                                                                                        driver.page_source,
+                                                                                                        "html.parser"
+                                                                                                    )
+
+                                                                                                    # ----------------------------
+                                                                                                    # SKIP DUPLICATES
+                                                                                                    # ----------------------------
+                                                                                                    if clean_url in existing_urls:
+                                                                                                        st.write(f"Skipping duplicate: {clean_url}")
+                                                                                                        continue
+
+                                                                                                    Date = datetime.now().strftime(
+                                                                                                        "%Y-%m-%d %H:%M:%S"
+                                                                                                    )
+                                                                                                    # ----------------------------
+                                                                                                    # SAVE TO EXCEL
+                                                                                                    # ----------------------------
+                                                                                                    ws.append([
+                                                                                                        business_name,
+                                                                                                        website,
+                                                                                                        clean_url,
+                                                                                                        phone_number,
+                                                                                                        address,
+                                                                                                        Date,
+                                                                                                    ])
+                                                                                                    existing_urls.add(clean_url)
+                                                                                                    wb.save(excel_file)
+
+                                                                                                    processed_urls.add(clean_url)
+
+                                                                                    except Exception as e:
+
+                                                                                        st.error(f"Error : {e}")
+
+                                                                                        # ----------------------------
+                                                                                        # CLOSE DRIVER
+                                                                                        # ----------------------------
+                                                                                        driver.quit()
+
+                                                                                        # ----------------------------
+                                                                                        # SUCCESS
+                                                                                        # ----------------------------
+                                                                                        st.success("Scraping Completed")
+
+                                                                                        st.write("Excel saved :", excel_file)
+
+                                                                                        # ----------------------------
+                                                                                        # DOWNLOAD BUTTON
+                                                                                        # ----------------------------
+                                                                                        if os.path.exists(excel_file):
+
+                                                                                            with open(excel_file, "rb") as file:
+
+                                                                                                st.download_button(
+                                                                                                    label="Download Excel",
+                                                                                                    data=file,
+                                                                                                    file_name=excel_file,
+                                                                                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                                                                                )
+
+
+                                                                                                st.write(f"Loaded {len(existing_urls)} existing URLs")
+                            except Exception as e:
+
+                                st.error(f"Main Error : {e}")
+
+                                try:
+                                    driver.quit()
+                                except:
+                                    pass
+
+                                # import streamlit as st
+
+                                # st.title("Working")
