@@ -188,7 +188,7 @@ try:
                 # st.write("frist if",full_url)
             if full_url not in business_links:
                 # st.write("second if")
-                business_links.append(full_url)
+                business_links.add(full_url)
                 st.write("Total business links :", len(business_links))
     if len(business_links) == 0:
         st.error("No business links found")
@@ -207,7 +207,7 @@ try:
         st.write("Existing Excel file opened")
 
     else:
-        
+        st.write("new  Excel file opened")
         wb = Workbook()
         ws = wb.active
         ws.append([
