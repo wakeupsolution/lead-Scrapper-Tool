@@ -175,301 +175,198 @@ try:
         
 
     soup = BeautifulSoup(driver.page_source, "html.parser")
-    business_links = []
+    business_links = set()
     all_links = soup.find_all("a", href=True)
 
     for link in all_links:
         href = link["href"]
       
-    if "/Chennai/" in href and "nct-" not in href:
-        full_url = href
-        if full_url.startswith("/"):
-            full_url = "https://www.justdial.com" + full_url
-            # st.write("frist if",full_url)
+        if "/Chennai/" in href and "nct-" not in href:
+            full_url = href
+            if full_url.startswith("/"):
+                full_url = "https://www.justdial.com" + full_url
+                # st.write("frist if",full_url)
             if full_url not in business_links:
                 # st.write("second if")
-                business_links.append(full_url)
+                business_links.add(full_url)
                 st.write("Total business links :", len(business_links))
-            if len(business_links) == 0:
-                st.error("No business links found")
-                driver.quit()
-                st.stop()
-except Exception  as e:
-    st.error(f"error:{e}")
-    st.error("error")
-
-            #                                                 # ----------------------------
-            #                                                 # EXCEL FILE
-            #                                                 # ----------------------------
-            #                                                 path_parts = url.split("/")
-
-            #                                                 category_name = path_parts[-2]  # Interior-Designers
-
-            #                                                 excel_file = f"{category_name}.xlsx"
-
-            #                                                 st.write("Category:", category_name)
-            #                                                 st.write("Excel File:", excel_file)
-
-            #                                                 if os.path.exists(excel_file):
-
-            #                                                     wb = load_workbook(excel_file)
-            #                                                     ws = wb.active
-
-            #                                                     st.write("Existing Excel file opened")
-
-            #                                                 else:
-
-            #                                                     wb = Workbook()
-            #                                                     ws = wb.active
-
-            #                                                     ws.append([
-            #                                                         "Business Name",
-            #                                                         "Website",
-            #                                                         "Justdial URL",
-            #                                                         "Phone Number",
-            #                                                         "Address",
-            #                                                         "Date"
-            #                                                     ])
-
-            #                                                     wb.save(excel_file)
-            #                                                     existing_urls = set()
-
-            #                                                     for row in ws.iter_rows(min_row=2, values_only=True):
-            #                                                         if row[2]:
-            #                                                             existing_urls.add(str(row[2]).strip())
-
-            #                                                             st.write("New Excel file created")
-
-            #                                                             st.write("Excel Path :", os.path.abspath(excel_file))
-
-            #                                                             # ----------------------------
-            #                                                             # PROGRESS BAR
-            #                                                             # ----------------------------
-            #                                                             progress_bar = st.progress(0)
-
-            #                                                             status_text = st.empty()
-
-            #                                                             # ----------------------------
-            #                                                             # OPEN BUSINESS PAGES
-            #                                                             # ----------------------------
-            #                                                             count = 0
-
-            #                                                             for business_url in business_links:
-
-            #                                                                 # ----------------------------
-            #                                                                 # STOP SCRAPING
-            #                                                                 # ----------------------------
-            #                                                                 if st.session_state.stop_scraping:
-            #                                                                     driver.quit()
-            #                                                                     st.warning("Scraping stopped")
-            #                                                                     st.stop()
-
-            #                                                                     count += 1
-
-            #                                                                     # ----------------------------
-            #                                                                     # UPDATE PROGRESS
-            #                                                                     # ----------------------------
-            #                                                                     progress = count / len(business_links)
-
-            #                                                                     progress_bar.progress(progress)
-
-            #                                                                     status_text.write(
-            #                                                                         f"Processing {count} / {len(business_links)}"
-            #                                                                     )
-
-            #                                                                     # ----------------------------
-            #                                                                     # SKIP DUPLICATES
-            #                                                                     # ----------------------------
-            #                                                                     if business_url in processed_urls:
-            #                                                                         continue
-
-            #                                                                     # ----------------------------
-            #                                                                     # RESTART DRIVER
-            #                                                                     # ----------------------------
-            #                                                                     if count % 20 == 0:
-
-            #                                                                         st.write("Restarting browser...")
-
-            #                                                                         driver.quit()
-
-            #                                                                         time.sleep(5)
-
-            #                                                                         driver = uc.Chrome(
-            #                                                                             version_main=int(version),
-            #                                                                             use_subprocess=True
-            #                                                                         )
-
-            #                                                                         time.sleep(5)
-
-            #                                                                         try:
-
-            #                                                                             driver.get(business_url)
-
-            #                                                                             WebDriverWait(driver, 15).until(
-            #                                                                                 EC.presence_of_element_located(
-            #                                                                                     (By.TAG_NAME, "title")
-            #                                                                                 )
-            #                                                                             )
-
-            #                                                                             detail_soup = BeautifulSoup(
-            #                                                                                 driver.page_source,
-            #                                                                                 "html.parser"
-            #                                                                             )
-
-            #                                                                             # ----------------------------
-            #                                                                             # BUSINESS NAME
-            #                                                                             # ----------------------------
-            #                                                                             business_name = (
-            #                                                                                 driver.title.split("in")[0].strip()
-            #                                                                             )
-
-            #                                                                             # ----------------------------
-            #                                                                             # ALL LINKS
-            #                                                                             # ----------------------------
-            #                                                                             detail_links = detail_soup.find_all(
-            #                                                                                 "a",
-            #                                                                                 href=True
-            #                                                                             )
-
-            #                                                                             # ----------------------------
-            #                                                                             # PHONE NUMBER
-            #                                                                             # ----------------------------
-            #                                                                             phone_number = "Not Found"
-
-            #                                                                             for dlink in detail_links:
-
-            #                                                                                 text = dlink.text.strip()
-
-            #                                                                                 if text.isdigit() and len(text) >= 10:
-
-            #                                                                                     phone_number = text
-            #                                                                                     break
-
-            #                                                                                 # ----------------------------
-            #                                                                                 # ADDRESS
-            #                                                                                 # ----------------------------
-            #                                                                                 address = "No Address"
-
-            #                                                                                 address_tag = detail_soup.find(
-            #                                                                                     "a",
-            #                                                                                     class_="color111"
-            #                                                                                 )
-
-            #                                                                                 if address_tag:
-
-            #                                                                                     address = address_tag.get_text(
-            #                                                                                         " ",
-            #                                                                                         strip=True
-            #                                                                                     )
-
-            #                                                                                     # ----------------------------
-            #                                                                                     # WEBSITE
-            #                                                                                     # ----------------------------
-            #                                                                                     website = "No Website"
-
-            #                                                                                     for dlink in detail_links:
-
-            #                                                                                         dhref = dlink["href"].lower()
-
-            #                                                                                         if (
-            #                                                                                             "http" in dhref
-            #                                                                                             and "justdial" not in dhref
-            #                                                                                             and "facebook" not in dhref
-            #                                                                                             and "instagram" not in dhref
-            #                                                                                             and "youtube" not in dhref
-            #                                                                                             and "whatsapp" not in dhref
-            #                                                                                         ):
-
-            #                                                                                             website = dhref
-            #                                                                                             break
-
-            #                                                                                         # ----------------------------
-            #                                                                                         # CLEAN URL
-            #                                                                                         # ----------------------------
-            #                                                                                         # ----------------------------
-            #                                                                                         # OPEN BUSINESS PAGE
-            #                                                                                         # ----------------------------
-            #                                                                                         driver.get(business_url)
-
-            #                                                                                         WebDriverWait(driver, 15).until(
-            #                                                                                             EC.presence_of_element_located(
-            #                                                                                                 (By.TAG_NAME, "title")
-            #                                                                                             )
-            #                                                                                         )
-
-            #                                                                                         # Get final URL after redirects
-            #                                                                                         clean_url = driver.current_url.split("?")[0]
-
-            #                                                                                         detail_soup = BeautifulSoup(
-            #                                                                                             driver.page_source,
-            #                                                                                             "html.parser"
-            #                                                                                         )
-
-            #                                                                                         # ----------------------------
-            #                                                                                         # SKIP DUPLICATES
-            #                                                                                         # ----------------------------
-            #                                                                                         if clean_url in existing_urls:
-            #                                                                                             st.write(f"Skipping duplicate: {clean_url}")
-            #                                                                                             continue
-
-            #                                                                                         Date = datetime.now().strftime(
-            #                                                                                             "%Y-%m-%d %H:%M:%S"
-            #                                                                                         )
-            #                                                                                         # ----------------------------
-            #                                                                                         # SAVE TO EXCEL
-            #                                                                                         # ----------------------------
-            #                                                                                         ws.append([
-            #                                                                                             business_name,
-            #                                                                                             website,
-            #                                                                                             clean_url,
-            #                                                                                             phone_number,
-            #                                                                                             address,
-            #                                                                                             Date,
-            #                                                                                         ])
-            #                                                                                         existing_urls.add(clean_url)
-            #                                                                                         wb.save(excel_file)
-
-            #                                                                                         processed_urls.add(clean_url)
-
-            #                                                                         except Exception as e:
-
-            #                                                                             st.error(f"Error : {e}")
-
-            #                                                                             # ----------------------------
-            #                                                                             # CLOSE DRIVER
-            #                                                                             # ----------------------------
-            #                                                                             driver.quit()
-
-            #                                                                             # ----------------------------
-            #                                                                             # SUCCESS
-            #                                                                             # ----------------------------
-            #                                                                             st.success("Scraping Completed")
-
-            #                                                                             st.write("Excel saved :", excel_file)
-
-            #                                                                             # ----------------------------
-            #                                                                             # DOWNLOAD BUTTON
-            #                                                                             # ----------------------------
-            #                                                                             if os.path.exists(excel_file):
-
-            #                                                                                 with open(excel_file, "rb") as file:
-
-            #                                                                                     st.download_button(
-            #                                                                                         label="Download Excel",
-            #                                                                                         data=file,
-            #                                                                                         file_name=excel_file,
-            #                                                                                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            #                                                                                     )
-
-
-            #                                                                                     st.write(f"Loaded {len(existing_urls)} existing URLs")
-            #                 except Exception as e:
-
-            #                     st.error(f"Main Error : {e}")
-
-            #                     try:
-            #                         driver.quit()
-            #                     except:
-            #                         pass
+    if len(business_links) == 0:
+        st.error("No business links found")
+        driver.quit()
+        st.stop()
+
+
+    path_parts = url.split("/")
+    category_name = path_parts[-2]
+    excel_file = f"{category_name}.xlsx"
+    st.write("Category:", category_name)
+    st.write("Excel File:", excel_file)
+    if os.path.exists(excel_file):
+        wb = load_workbook(excel_file)
+        ws = wb.active
+        st.write("Existing Excel file opened")
+
+    else:
+        st.write("new  Excel file opened")
+        wb = Workbook()
+        ws = wb.active
+        ws.append([
+            "Business Name",
+            "Website",
+            "Justdial URL",
+            "Phone Number",
+            "Address",
+            "data taken Date",
+            "Response",
+            "date"
+            ])
+    wb.save(excel_file)
+
+    existing_urls = set()
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if row[2]:
+            existing_urls.add(str(row[2]).strip())
+    #st.write("New Excel file created")
+    st.write("Excel Path :", os.path.abspath(excel_file)) 
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    # OPEN BUSINESS PAGES
+    count = 0
+    for business_url in business_links:
+        if st.session_state.stop_scraping:
+            driver.quit()
+            st.warning("Scraping stopped")
+            st.stop()
+        count += 1
+        progress = count / len(business_links)
+        progress_bar.progress(progress)
+        status_text.write(
+        f"Processing {count} / {len(business_links)}"
+        )
+   
+    # st.warning("Scraping stopped")
+            # SKIP DUPLICATE----------------------------
+        if business_url in processed_urls:
+            continue
+        
+            # ----------------------------
+        if count % 20 == 0:
+            st.write("Restarting browser...")
+            driver.quit()
+            time.sleep(5)
+            driver = uc.Chrome(version_main=int(version),
+            use_subprocess=True
+            )
+            time.sleep(5)
+        try:
+            driver.get(business_url)
+            WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located(
+            (By.TAG_NAME, "title")
+            ))
+            detail_soup = BeautifulSoup(
+            driver.page_source,
+            "html.parser"
+            )
+
+            # ----------------------------
+            # BUSINESS NAME
+            # ----------------------------
+            business_name = (
+            driver.title.split("in")[0].strip()
+            )
+            detail_links = detail_soup.find_all(
+            "a",
+            href=True
+            )
+
+            phone_number = "Not Found"
+
+            for dlink in detail_links:
+                text = dlink.text.strip()
+                if text.isdigit() and len(text) >= 10:
+                    phone_number = text
+                    break
+    
+        
+            address = "No Address"
+            address_tag = detail_soup.find(
+            "a",
+            class_="color111"
+            )
+            if address_tag:
+                address = address_tag.get_text(
+                " ",
+                strip=True
+                )
+            website = "No Website"
+
+            for dlink in detail_links:
+                dhref = dlink["href"].lower()
+                if (
+                    "http" in dhref
+                    and "justdial" not in dhref
+                    and "facebook" not in dhref
+                    and "instagram" not in dhref
+                    and "youtube" not in dhref
+                    and "whatsapp" not in dhref
+                    ):
+                    website = dhref
+                    break
+
+                                     
+            # driver.get(business_url)
+            # WebDriverWait(driver, 15).until(
+            # EC.presence_of_element_located(
+            # (By.TAG_NAME, "title")
+            # )
+            # )
+            clean_url = driver.current_url.split("?")[0]
+            detail_soup = BeautifulSoup(
+            driver.page_source,
+            "html.parser"
+            )
+
+            if clean_url in existing_urls:
+                st.write(f"Skipping duplicate: {clean_url}")
+                continue
+
+            Date = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+            )                                                                                
+            ws.append([
+                business_name,
+                website,
+                clean_url,
+                phone_number,
+                address,
+                Date,
+                ])
+            existing_urls.add(clean_url)
+            wb.save(excel_file)
+            processed_urls.add(clean_url)
+        except Exception as e:
+            st.error(f"Error : {e}")
+    driver.quit()
+
+    st.success("Scraping Completed")
+    st.write("Excel saved :", excel_file)
+    if os.path.exists(excel_file):
+         with open(excel_file, "rb") as file:
+            st.download_button(
+            label="Download Excel",
+            data=file,
+            file_name=excel_file,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+             )
+    st.write(f"Loaded {len(existing_urls)} existing URLs")
+except Exception as e:
+    st.error(f"Main Error : {e}")
+
+try:
+    driver.quit()
+except:
+    pass
 
                              

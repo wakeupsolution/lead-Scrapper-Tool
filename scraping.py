@@ -8,8 +8,8 @@ from openpyxl import Workbook, load_workbook
 import random
 import os
 import time
-import re
-import subprocess
+# import re
+# import subprocess
 from urllib.parse import urlparse
 from datetime import datetime
 
@@ -64,18 +64,28 @@ if not url:
 
            
 
-output = subprocess.check_output(
- r'reg query "HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon" /v version',
-     shell=True
-    ).decode()
+# output = subprocess.check_output(
+#  r'reg query "HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon" /v version',
+#      shell=True
+#     ).decode()
 
-version = re.search(r'(\d+)\.', output).group(1)
+# version = re.search(r'(\d+)\.', output).group(1)
+
+# driver = uc.Chrome(
+# version_main=int(version),
+# use_subprocess=True
+#  )
+# processed_urls = set()
+options = uc.ChromeOptions()
+
+options.add_argument("--headless=new")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
 
 driver = uc.Chrome(
-version_main=int(version),
-use_subprocess=True
- )
-processed_urls = set()
+    options=options,
+    use_subprocess=True
+)
 
 try:
 
