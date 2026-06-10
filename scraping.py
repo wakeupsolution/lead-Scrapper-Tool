@@ -12,6 +12,7 @@ import time
 # import subprocess
 from urllib.parse import urlparse
 from datetime import datetime
+import shutil
 
 # ----------------------------
 # PAGE TITLE
@@ -84,6 +85,16 @@ options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-gpu")
 
+st.write("chromium:", shutil.which("chromium"))
+st.write("chromium-browser:", shutil.which("chromium-browser"))
+st.write("google-chrome:", shutil.which("google-chrome"))
+
+for p in [
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/google-chrome",
+]:
+    st.write(p, os.path.exists(p))
 driver = uc.Chrome(
     options=options,
     use_subprocess=True
