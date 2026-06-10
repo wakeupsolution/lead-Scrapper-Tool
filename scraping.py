@@ -77,10 +77,12 @@ if not url:
 #  )
 # processed_urls = set()
 options = uc.ChromeOptions()
+options.binary_location = "/usr/bin/chromium"
 
 options.add_argument("--headless=new")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--disable-gpu")
 
 driver = uc.Chrome(
     options=options,
