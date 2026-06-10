@@ -216,7 +216,9 @@ try:
             "Justdial URL",
             "Phone Number",
             "Address",
-            "Date",
+            "data taken Date",
+            "Response",
+            "date"
             ])
     wb.save(excel_file)
 
