@@ -88,7 +88,7 @@ options.add_argument("--disable-gpu")
 st.write("chromium:", shutil.which("chromium"))
 st.write("chromium-browser:", shutil.which("chromium-browser"))
 st.write("google-chrome:", shutil.which("google-chrome"))
-
+ #test
 for p in [
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
